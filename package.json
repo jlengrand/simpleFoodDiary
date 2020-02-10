@@ -1,0 +1,32 @@
+{
+  "name": "simpleFoodDiary",
+  "version": "1.0.0",
+  "description": "A simplistic food diary to have an idea of what you eat and drink",
+  "main": "src/index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "elm-app test",
+    "build": "elm-app build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jlengrand/simpleFoodDiary.git"
+  },
+  "keywords": [
+    "elm"
+  ],
+  "author": "Julien Lengrand-Lambert <julien@lengrand.fr>",
+  "license": "SEE LICENSE IN LICENSE",
+  "bugs": {
+    "url": "https://github.com/jlengrand/simpleFoodDiary/issues"
+  },
+  "homepage": "https://github.com/jlengrand/simpleFoodDiary#readme",
+  "devDependencies": {
+    "create-elm-app": "^4.1.3"
+  },
+  "dependencies": {
+    "aws-sdk": "^2.601.0"
+  }
+}
