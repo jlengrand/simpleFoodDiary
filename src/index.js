@@ -71,6 +71,22 @@ firebase.auth().onAuthStateChanged(user => {
   }
 });
 
+app.ports.saveFoodLog.subscribe(data => {
+  console.log(`saving message to database : ${data}`);
+  console.log(data);
+
+  // db.collection(`users/${data.uid}/messages`)
+  //   .add({
+  //     content: data.content
+  //   })
+  //   .catch(error => {
+  //     app.ports.signInError.send({
+  //       code: error.code,
+  //       message: error.message
+  //     });
+  //   });
+});
+
 // If you want your app to work offline and load faster, you can change
 // unregister() to register() below. Note this comes with some pitfalls.
 // Learn more about service workers: https://bit.ly/CRA-PWA

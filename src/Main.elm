@@ -1,50 +1,74 @@
-port module Main exposing (..)
+module Main exposing (..)
 
 import Browser
 import Html exposing (Html, button, div, h1, h2, img, text)
 import Html.Attributes exposing (src)
 import Html.Events exposing (onClick)
 import Json.Decode
-import Json.Decode.Pipeline
 import Json.Encode
+import Ports exposing (..)
+import Time
 
 
 
 ---- MODEL ----
 
 
-port signIn : () -> Cmd msg
+portionToString : Portion -> String
+portionToString portion =
+    case portion of
+        Small ->
+            "Small"
+
+        Medium ->
+            "Medium"
+
+        Large ->
+            "Large"
+
+        Huge ->
+            "Huge"
 
 
-port signInInfo : (Json.Encode.Value -> msg) -> Sub msg
+type Portion
+    = Small
+    | Medium
+    | Large
+    | Huge
 
 
-port signInError : (Json.Encode.Value -> msg) -> Sub msg
-
-
-port signOut : () -> Cmd msg
-
-
-type alias ErrorData =
-    { code : Maybe String, message : Maybe String, credential : Maybe String }
-
-
-type alias UserData =
-    { token : String, email : String, uid : String }
+type alias FoodLog =
+    { ts : Time.Posix
+    , portion : Portion
+    , keto : Bool
+    , vegan : Bool
+    , meat : Bool
+    , alcohol : Bool
+    }
 
 
 type alias Model =
-    { userData : Maybe UserData, error : ErrorData }
+    { userData : Maybe UserData
+    , error : ErrorData
+    , currentFoodLog : Maybe FoodLog
+    }
 
 
-emptyError : ErrorData
-emptyError =
-    { code = Maybe.Nothing, credential = Maybe.Nothing, message = Maybe.Nothing }
+randomFoodLog : FoodLog
+randomFoodLog =
+    FoodLog (Time.millisToPosix 0) Medium False False False True
 
 
 init : ( Model, Cmd Msg )
 init =
-    ( { userData = Maybe.Nothing, error = emptyError }, Cmd.none )
+    ( { userData = Maybe.Nothing
+      , error = emptyError
+
+      --   , currentFoodLog = Maybe.Nothing
+      , currentFoodLog = Just randomFoodLog
+      }
+    , Cmd.none
+    )
 
 
 
@@ -56,6 +80,7 @@ type Msg
     | LogOut
     | LoggedInData (Result Json.Decode.Error UserData)
     | LoggedInError (Result Json.Decode.Error ErrorData)
+    | SaveFoodLog
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -83,19 +108,29 @@ update msg model =
                 Err error ->
                     ( { model | error = messageToError <| Json.Decode.errorToString error }, Cmd.none )
 
+        SaveFoodLog ->
+            case model.currentFoodLog of
+                Just foodLog ->
+                    ( model, saveFoodLog <| foodLogEncoder foodLog )
+
+                Maybe.Nothing ->
+                    ( model, Cmd.none )
+
 
 
 ---- VIEW ----
 
 
-messageToError : String -> ErrorData
-messageToError message =
-    { code = Maybe.Nothing, credential = Maybe.Nothing, message = Just message }
-
-
-errorPrinter : ErrorData -> String
-errorPrinter errorData =
-    Maybe.withDefault "" errorData.code ++ " " ++ Maybe.withDefault "" errorData.credential ++ " " ++ Maybe.withDefault "" errorData.message
+foodLogEncoder : FoodLog -> Json.Encode.Value
+foodLogEncoder foodLog =
+    Json.Encode.object
+        [ ( "portion", Json.Encode.string <| portionToString foodLog.portion )
+        , ( "keto", Json.Encode.bool foodLog.keto )
+        , ( "vegan", Json.Encode.bool foodLog.vegan )
+        , ( "meat", Json.Encode.bool foodLog.meat )
+        , ( "alcohol", Json.Encode.bool foodLog.alcohol )
+        , ( "ts", Json.Encode.int <| Time.posixToMillis foodLog.ts )
+        ]
 
 
 view : Model -> Html Msg
@@ -119,27 +154,17 @@ view model =
                         ""
             ]
         , h2 [] [ text <| errorPrinter model.error ]
+        , case model.userData of
+            Just _ ->
+                button [ onClick SaveFoodLog ] [ text "Log food" ]
+
+            Maybe.Nothing ->
+                div [] []
         ]
 
 
 
 ---- PROGRAM ----
-
-
-userDataDecoder : Json.Decode.Decoder UserData
-userDataDecoder =
-    Json.Decode.succeed UserData
-        |> Json.Decode.Pipeline.required "token" Json.Decode.string
-        |> Json.Decode.Pipeline.required "email" Json.Decode.string
-        |> Json.Decode.Pipeline.required "uid" Json.Decode.string
-
-
-logInErrorDecoder : Json.Decode.Decoder ErrorData
-logInErrorDecoder =
-    Json.Decode.succeed ErrorData
-        |> Json.Decode.Pipeline.required "code" (Json.Decode.nullable Json.Decode.string)
-        |> Json.Decode.Pipeline.required "message" (Json.Decode.nullable Json.Decode.string)
-        |> Json.Decode.Pipeline.required "credential" (Json.Decode.nullable Json.Decode.string)
 
 
 subscriptions : Model -> Sub Msg
