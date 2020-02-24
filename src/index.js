@@ -52,6 +52,18 @@ app.ports.signOut.subscribe(() => {
   firebase.auth().signOut();
 });
 
+app.ports.saveFoodLog.subscribe(data => {
+  console.log(`saving message to database : ${data}`);
+  console.log(data);
+
+  db.collection(`users/${data.uid}/logs`)
+    .add({
+      content: data
+    })
+    .catch(error => {
+      console.log("error here ", error);
+    });
+});
 
 
 // If you want your app to work offline and load faster, you can change
