@@ -28,7 +28,7 @@ app.ports.signIn.subscribe(() => {
   console.log("LogIn called");
   firebase
     .auth()
-    .signInWithRedirect(provider)
+    .signInWithPopup(provider)
     .then(result => {
       result.user.getIdToken().then(idToken => {
         app.ports.signInInfo.send({
@@ -39,10 +39,11 @@ app.ports.signIn.subscribe(() => {
       });
     })
     .catch(error => {
-      app.ports.signInError.send({
-        code: error.code,
-        message: error.message
-      });
+      console.log("Impossible to sign in ", error);
+      // app.ports.signInError.send({
+      //   code: error.code,
+      //   message: error.message
+      // });
     });
 });
 
@@ -51,41 +52,7 @@ app.ports.signOut.subscribe(() => {
   firebase.auth().signOut();
 });
 
-//  Observer on user info
-firebase.auth().onAuthStateChanged(user => {
-  console.log("called");
-  if (user) {
-    user
-      .getIdToken()
-      .then(idToken => {
-        app.ports.signInInfo.send({
-          token: idToken,
-          email: user.email,
-          uid: user.uid
-        });
-      })
-      .catch(error => {
-        console.log("Error when retrieving cached user");
-        console.log(error);
-      });
-  }
-});
 
-app.ports.saveFoodLog.subscribe(data => {
-  console.log(`saving message to database : ${data}`);
-  console.log(data);
-
-  // db.collection(`users/${data.uid}/messages`)
-  //   .add({
-  //     content: data.content
-  //   })
-  //   .catch(error => {
-  //     app.ports.signInError.send({
-  //       code: error.code,
-  //       message: error.message
-  //     });
-  //   });
-});
 
 // If you want your app to work offline and load faster, you can change
 // unregister() to register() below. Note this comes with some pitfalls.

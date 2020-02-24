@@ -1,72 +1,41 @@
-module Main exposing (..)
+port module Main exposing (..)
 
 import Browser
-import Html exposing (Html, button, div, h1, h2, img, text)
+import Html exposing (Html, button, div, h1, img, text)
 import Html.Attributes exposing (src)
 import Html.Events exposing (onClick)
 import Json.Decode
+import Json.Decode.Pipeline
 import Json.Encode
-import Ports exposing (..)
-import Time
 
 
 
 ---- MODEL ----
 
 
-portionToString : Portion -> String
-portionToString portion =
-    case portion of
-        Small ->
-            "Small"
-
-        Medium ->
-            "Medium"
-
-        Large ->
-            "Large"
-
-        Huge ->
-            "Huge"
+port signIn : () -> Cmd msg
 
 
-type Portion
-    = Small
-    | Medium
-    | Large
-    | Huge
+port signOut : () -> Cmd msg
 
 
-type alias FoodLog =
-    { ts : Time.Posix
-    , portion : Portion
-    , keto : Bool
-    , vegan : Bool
-    , meat : Bool
-    , alcohol : Bool
+port signInInfo : (Json.Encode.Value -> msg) -> Sub msg
+
+
+type alias UserData =
+    { token : String
+    , email : String
+    , uid : String
     }
 
 
 type alias Model =
-    { userData : Maybe UserData
-    , error : ErrorData
-    , currentFoodLog : Maybe FoodLog
-    }
-
-
-randomFoodLog : FoodLog
-randomFoodLog =
-    FoodLog (Time.millisToPosix 0) Medium False False False True
+    { userData : Maybe UserData }
 
 
 init : ( Model, Cmd Msg )
 init =
-    ( { userData = Maybe.Nothing
-      , error = emptyError
-
-      --   , currentFoodLog = Maybe.Nothing
-      , currentFoodLog = Just randomFoodLog
-      }
+    ( { userData = Maybe.Nothing }
     , Cmd.none
     )
 
@@ -76,61 +45,27 @@ init =
 
 
 type Msg
-    = LogIn
-    | LogOut
+    = SignIn
     | LoggedInData (Result Json.Decode.Error UserData)
-    | LoggedInError (Result Json.Decode.Error ErrorData)
-    | SaveFoodLog
+    | LogOut
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        LogIn ->
+        SignIn ->
             ( model, signIn () )
 
         LogOut ->
-            ( { model | userData = Maybe.Nothing, error = emptyError }, signOut () )
+            ( { model | userData = Maybe.Nothing }, signOut () )
 
         LoggedInData result ->
             case result of
                 Ok value ->
                     ( { model | userData = Just value }, Cmd.none )
 
-                Err error ->
-                    ( { model | error = messageToError <| Json.Decode.errorToString error }, Cmd.none )
-
-        LoggedInError result ->
-            case result of
-                Ok value ->
-                    ( { model | error = value }, Cmd.none )
-
-                Err error ->
-                    ( { model | error = messageToError <| Json.Decode.errorToString error }, Cmd.none )
-
-        SaveFoodLog ->
-            case model.currentFoodLog of
-                Just foodLog ->
-                    ( model, saveFoodLog <| foodLogEncoder foodLog )
-
-                Maybe.Nothing ->
+                Err _ ->
                     ( model, Cmd.none )
-
-
-
----- VIEW ----
-
-
-foodLogEncoder : FoodLog -> Json.Encode.Value
-foodLogEncoder foodLog =
-    Json.Encode.object
-        [ ( "portion", Json.Encode.string <| portionToString foodLog.portion )
-        , ( "keto", Json.Encode.bool foodLog.keto )
-        , ( "vegan", Json.Encode.bool foodLog.vegan )
-        , ( "meat", Json.Encode.bool foodLog.meat )
-        , ( "alcohol", Json.Encode.bool foodLog.alcohol )
-        , ( "ts", Json.Encode.int <| Time.posixToMillis foodLog.ts )
-        ]
 
 
 view : Model -> Html Msg
@@ -139,27 +74,14 @@ view model =
         [ img [ src "/logo.svg" ] []
         , h1 [] [ text "Your Elm App is working!" ]
         , case model.userData of
-            Just data ->
-                button [ onClick LogOut ] [ text "Logout from Google" ]
-
             Maybe.Nothing ->
-                button [ onClick LogIn ] [ text "Login with Google" ]
-        , h2 []
-            [ text <|
-                case model.userData of
-                    Just data ->
-                        data.email ++ " " ++ data.uid ++ " " ++ data.token
+                button [ onClick SignIn ] [ text "Sign in with Google" ]
 
-                    Maybe.Nothing ->
-                        ""
-            ]
-        , h2 [] [ text <| errorPrinter model.error ]
-        , case model.userData of
-            Just _ ->
-                button [ onClick SaveFoodLog ] [ text "Log food" ]
-
-            Maybe.Nothing ->
-                div [] []
+            Just userData ->
+                div []
+                    [ text userData.email
+                    , button [ onClick LogOut ] [ text "Log out" ]
+                    ]
         ]
 
 
@@ -167,11 +89,18 @@ view model =
 ---- PROGRAM ----
 
 
+userDataDecoder : Json.Decode.Decoder UserData
+userDataDecoder =
+    Json.Decode.succeed UserData
+        |> Json.Decode.Pipeline.required "token" Json.Decode.string
+        |> Json.Decode.Pipeline.required "email" Json.Decode.string
+        |> Json.Decode.Pipeline.required "uid" Json.Decode.string
+
+
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
         [ signInInfo (Json.Decode.decodeValue userDataDecoder >> LoggedInData)
-        , signInError (Json.Decode.decodeValue logInErrorDecoder >> LoggedInError)
         ]
 
 
