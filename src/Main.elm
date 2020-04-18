@@ -1,29 +1,19 @@
-port module Main exposing (..)
+module Main exposing (..)
 
 import Browser
+import Flip
 import Html exposing (Html, button, div, h1, img, text)
-import Html.Attributes exposing (src)
+import Html.Attributes exposing (height, src, width)
 import Html.Events exposing (onClick)
 import Json.Decode
 import Json.Decode.Pipeline
 import Json.Encode
+import Ports
 import Time
 
 
 
 ---- MODEL ----
-
-
-port signIn : () -> Cmd msg
-
-
-port signOut : () -> Cmd msg
-
-
-port saveFoodLog : Json.Encode.Value -> Cmd msg
-
-
-port signInInfo : (Json.Encode.Value -> msg) -> Sub msg
 
 
 type alias UserData =
@@ -69,14 +59,14 @@ type alias FoodLog =
 
 type alias Model =
     { userData : Maybe UserData
-    , currentFoodLog : Maybe FoodLog
+    , currentFoodLog : FoodLog
     }
 
 
 init : ( Model, Cmd Msg )
 init =
-    ( { userData = Maybe.Nothing
-      , currentFoodLog = Just fakeFoodLog
+    ( { userData = Just fakeUserData
+      , currentFoodLog = defaultFoodLog
       }
     , Cmd.none
     )
@@ -94,6 +84,24 @@ fakeFoodLog =
     }
 
 
+defaultFoodLog : FoodLog
+defaultFoodLog =
+    -- TODO : Use latest values + current timing
+    { ts = Time.millisToPosix 0
+    , portion = Medium
+    , keto = False
+    , vegan = False
+    , meat = False
+    , alcohol = False
+    , caffeine = False
+    }
+
+
+fakeUserData : UserData
+fakeUserData =
+    UserData "eyJhbGciOiJSUzI1NiIsImtpZCI6IjBiYWJiMjI0NDBkYTAzMmM1ZDAwNDJjZGFhOWQyODVjZjhkMjAyYzQiLCJ0eXAiOiJKV1QifQ.eyJuYW1lIjoianVsaWVuIGxlbmdyYW5kLWxhbWJlcnQiLCJwaWN0dXJlIjoiaHR0cHM6Ly9saDMuZ29vZ2xldXNlcmNvbnRlbnQuY29tL2EtL0FBdUU3bUM1WE1yRm1CZ2JKaHBSai1ObjN4X3hrclM2SlNkdmVoUHhwRHpZQ2ciLCJpc3MiOiJodHRwczovL3NlY3VyZXRva2VuLmdvb2dsZS5jb20vc2ltcGxlZm9vZGRpYXJ5LWRhM2RiIiwiYXVkIjoic2ltcGxlZm9vZGRpYXJ5LWRhM2RiIiwiYXV0aF90aW1lIjoxNTg3MjAyMTI1LCJ1c2VyX2lkIjoibG1EclBVc0dDeWdRcTl4NURsNWtBcFBTYzlSMiIsInN1YiI6ImxtRHJQVXNHQ3lnUXE5eDVEbDVrQXBQU2M5UjIiLCJpYXQiOjE1ODcyMDIxMjUsImV4cCI6MTU4NzIwNTcyNSwiZW1haWwiOiJqbGVuZ3JhbmRAZ21haWwuY29tIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsImZpcmViYXNlIjp7ImlkZW50aXRpZXMiOnsiZ29vZ2xlLmNvbSI6WyIxMDczNDMzMDQ3MzA0NTQzNjg4MTciXSwiZW1haWwiOlsiamxlbmdyYW5kQGdtYWlsLmNvbSJdfSwic2lnbl9pbl9wcm92aWRlciI6Imdvb2dsZS5jb20ifX0.IylpIBkxwPUU22fQDV6FWknBJNfQWZiNUckVum_a1SFXmwWUC5J4MNFmhn0J0JdkHwgPQ8lN1q3pxvJcuxmhHh2unj-uWPCIpDJ7WoMD1P3OMIwGIpiwyAYM8W_GBqv4Y2U4bbM7IFk4QwIIfeh5P4BBg3GSxSjTzbYZne5Q9SYwFxi-SdzZV9w5QldAlnSuhDtUDAFdgVkaSM1YX5PKOr6oln5XFAl8flbpu857LdXD77qv-VdxMx7pErK0KrnrHmfYP06XyUpT-tx8VW5dB8XUbDlU23F_Wx4RrAin7kLf6TmG18LfOSPBsGyXscsNt2deDcaJKaHN5WEuH-QkhA" "jlengrand@gmail.com" "lmDrPUsGCygQq9x5Dl5kApPSc9R2"
+
+
 
 ---- UPDATE ----
 
@@ -102,17 +110,21 @@ type Msg
     = SignIn
     | LoggedInData (Result Json.Decode.Error UserData)
     | LogOut
-    | SendCurrentFoodLog String
+    | SendCurrentFoodLog FoodLog String
+    | ClickedVegan
+    | ClickedAlcohol
+    | ClickedCaffeine
+    | ClickedMeat
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         SignIn ->
-            ( model, signIn () )
+            ( model, Ports.signIn () )
 
         LogOut ->
-            ( { model | userData = Maybe.Nothing }, signOut () )
+            ( { model | userData = Maybe.Nothing }, Ports.signOut () )
 
         LoggedInData result ->
             case result of
@@ -122,13 +134,74 @@ update msg model =
                 Err _ ->
                     ( model, Cmd.none )
 
-        SendCurrentFoodLog uid ->
-            case model.currentFoodLog of
-                Maybe.Nothing ->
-                    ( model, Cmd.none )
+        SendCurrentFoodLog foodLog uid ->
+            ( { model | currentFoodLog = defaultFoodLog }, Ports.saveFoodLog <| foodLogEncoder foodLog uid )
 
-                Just foodLog ->
-                    ( { model | currentFoodLog = Maybe.Nothing }, saveFoodLog <| foodLogEncoder foodLog uid )
+        ClickedVegan ->
+            let
+                newModel =
+                    model.currentFoodLog
+                        |> setVegan (not model.currentFoodLog.vegan)
+                        |> asCurrentFoodLogIn model
+            in
+            ( newModel, Cmd.none )
+
+        ClickedAlcohol ->
+            let
+                newModel =
+                    model.currentFoodLog
+                        |> setAlcohol (not model.currentFoodLog.alcohol)
+                        |> asCurrentFoodLogIn model
+            in
+            ( newModel, Cmd.none )
+
+        ClickedCaffeine ->
+            let
+                newModel =
+                    model.currentFoodLog
+                        |> setCaffeine (not model.currentFoodLog.caffeine)
+                        |> asCurrentFoodLogIn model
+            in
+            ( newModel, Cmd.none )
+
+        ClickedMeat ->
+            let
+                newModel =
+                    model.currentFoodLog
+                        |> setMeat (not model.currentFoodLog.meat)
+                        |> asCurrentFoodLogIn model
+            in
+            ( newModel, Cmd.none )
+
+
+asCurrentFoodLogIn : Model -> FoodLog -> Model
+asCurrentFoodLogIn =
+    Flip.flip setCurrentFoodLog
+
+
+setCurrentFoodLog : FoodLog -> Model -> Model
+setCurrentFoodLog foodLog model =
+    { model | currentFoodLog = foodLog }
+
+
+setMeat : Bool -> FoodLog -> FoodLog
+setMeat value foodLog =
+    { foodLog | meat = value }
+
+
+setCaffeine : Bool -> FoodLog -> FoodLog
+setCaffeine value foodLog =
+    { foodLog | caffeine = value }
+
+
+setAlcohol : Bool -> FoodLog -> FoodLog
+setAlcohol value foodLog =
+    { foodLog | alcohol = value }
+
+
+setVegan : Bool -> FoodLog -> FoodLog
+setVegan value foodLog =
+    { foodLog | vegan = value }
 
 
 view : Model -> Html Msg
@@ -138,13 +211,26 @@ view model =
         , h1 [] [ text "Your Elm App is working!" ]
         , case model.userData of
             Maybe.Nothing ->
-                button [ onClick SignIn ] [ text "Sign in with Google" ]
+                button [ onClick SignIn ] [ text "Login with Google" ]
 
             Just userData ->
                 div []
                     [ text userData.email
-                    , button [ onClick <| SendCurrentFoodLog userData.uid ] [ text "Send" ]
-                    , button [ onClick LogOut ] [ text "Log out" ]
+                    , button [ onClick LogOut ] [ text "Logout" ]
+                    ]
+        , case model.userData of
+            Maybe.Nothing ->
+                div [] []
+
+            Just userData ->
+                div []
+                    [ div []
+                        [ button [ width 50, height 50, onClick <| ClickedVegan ] [ img [ width 50, height 50, src "/leaf-solid.svg" ] [] ]
+                        , button [ width 50, height 50, onClick <| ClickedAlcohol ] [ img [ width 50, height 50, src "/beer-solid.svg" ] [] ]
+                        , button [ width 50, height 50, onClick <| ClickedCaffeine ] [ img [ width 50, height 50, src "/coffee-solid.svg" ] [] ]
+                        , button [ width 50, height 50, onClick <| ClickedMeat ] [ img [ width 50, height 50, src "/drumstick-bite-solid.svg" ] [] ]
+                        ]
+                    , button [ onClick <| SendCurrentFoodLog model.currentFoodLog userData.uid ] [ text "Send" ]
                     ]
         ]
 
@@ -178,7 +264,7 @@ foodLogEncoder foodLog uid =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
-        [ signInInfo (Json.Decode.decodeValue userDataDecoder >> LoggedInData)
+        [ Ports.signInInfo (Json.Decode.decodeValue userDataDecoder >> LoggedInData)
         ]
 
 
