@@ -3,7 +3,7 @@ module Main exposing (..)
 import Browser
 import Flip
 import Html exposing (Html, button, div, h1, img, text)
-import Html.Attributes exposing (height, src, width)
+import Html.Attributes exposing (height, id, src, width)
 import Html.Events exposing (onClick)
 import Json.Decode
 import Json.Decode.Pipeline
