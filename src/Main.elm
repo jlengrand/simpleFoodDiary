@@ -115,6 +115,7 @@ type Msg
     | ClickedAlcohol
     | ClickedCaffeine
     | ClickedMeat
+    | ClickedPortion Portion
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -173,6 +174,13 @@ update msg model =
             in
             ( newModel, Cmd.none )
 
+        ClickedPortion portion ->
+            let
+                newModel =
+                    model
+            in
+            ( newModel, Cmd.none )
+
 
 asCurrentFoodLogIn : Model -> FoodLog -> Model
 asCurrentFoodLogIn =
@@ -182,6 +190,11 @@ asCurrentFoodLogIn =
 setCurrentFoodLog : FoodLog -> Model -> Model
 setCurrentFoodLog foodLog model =
     { model | currentFoodLog = foodLog }
+
+
+setPortion : Portion -> FoodLog -> FoodLog
+setPortion portion foodLog =
+    { foodLog | portion = portion }
 
 
 setMeat : Bool -> FoodLog -> FoodLog
@@ -224,7 +237,13 @@ view model =
 
             Just userData ->
                 div []
-                    [ div []
+                    [ div [ id "portion" ]
+                        [ button [ width 30, height 30, onClick <| ClickedPortion Small ] [ img [ width 30, height 30, src "/pizza-slice-solid.svg" ] [] ]
+                        , button [ width 30, height 30, onClick <| ClickedPortion Medium ] [ img [ width 30, height 30, src "/pizza-slice-solid.svg" ] [] ]
+                        , button [ width 30, height 30, onClick <| ClickedPortion Large ] [ img [ width 30, height 30, src "/pizza-slice-solid.svg" ] [] ]
+                        , button [ width 30, height 30, onClick <| ClickedPortion Huge ] [ img [ width 30, height 30, src "/pizza-slice-solid.svg" ] [] ]
+                        ]
+                    , div [ id "details" ]
                         [ button [ width 50, height 50, onClick <| ClickedVegan ] [ img [ width 50, height 50, src "/leaf-solid.svg" ] [] ]
                         , button [ width 50, height 50, onClick <| ClickedAlcohol ] [ img [ width 50, height 50, src "/beer-solid.svg" ] [] ]
                         , button [ width 50, height 50, onClick <| ClickedCaffeine ] [ img [ width 50, height 50, src "/coffee-solid.svg" ] [] ]
