@@ -3,7 +3,7 @@ module Main exposing (..)
 import Browser
 import Flip
 import Html exposing (Html, button, div, h1, img, text)
-import Html.Attributes exposing (height, id, src, width)
+import Html.Attributes exposing (class, height, id, src, width)
 import Html.Events exposing (onClick)
 import Json.Decode
 import Json.Decode.Pipeline
@@ -238,7 +238,19 @@ view model =
             Just userData ->
                 div []
                     [ div [ id "portion" ]
-                        [ button [ width 30, height 30, onClick <| ClickedPortion Small ] [ img [ width 30, height 30, src "/pizza-slice-solid.svg" ] [] ]
+                        [ button
+                            [ width 30
+                            , height 30
+                            , onClick <| ClickedPortion Small
+                            , class "bg-blue-500"
+                            , class "hover:bg-blue-700"
+                            , class "text-white"
+                            , class "font-bold"
+                            , class "rounded"
+                            , class "py-2"
+                            , class "px-4"
+                            ]
+                            [ img [ width 30, height 30, src "/pizza-slice-solid.svg" ] [] ]
                         , button [ width 30, height 30, onClick <| ClickedPortion Medium ] [ img [ width 30, height 30, src "/pizza-slice-solid.svg" ] [] ]
                         , button [ width 30, height 30, onClick <| ClickedPortion Large ] [ img [ width 30, height 30, src "/pizza-slice-solid.svg" ] [] ]
                         , button [ width 30, height 30, onClick <| ClickedPortion Huge ] [ img [ width 30, height 30, src "/pizza-slice-solid.svg" ] [] ]
