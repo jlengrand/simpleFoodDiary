@@ -2,13 +2,14 @@ module Main exposing (..)
 
 import Browser
 import Flip
-import Html exposing (Html, button, div, h1, img, text)
-import Html.Attributes exposing (class, height, id, src, width)
+import Html exposing (Attribute, Html, button, div, footer, h1, header, img, main_, text)
+import Html.Attributes exposing (class, height, id, src, style, width)
 import Html.Events exposing (onClick)
 import Json.Decode
 import Json.Decode.Pipeline
 import Json.Encode
 import Ports
+import Styles
 import Time
 
 
@@ -219,9 +220,31 @@ setVegan value foodLog =
 
 view : Model -> Html Msg
 view model =
+    div
+        [ class "flex-col"
+        , style "height" "100%"
+        ]
+        [ header
+            [ style "height" "10%"
+            , style "background-color" Styles.mainColor
+            , class "p-2"
+            ]
+            [ case model.userData of
+                Maybe.Nothing ->
+                    div [] []
+
+                Just userData ->
+                    img [ class "float-right h-full", src "/user-circle-solid.svg" ] []
+            ]
+        , main_ [ style "height" "80%", style "background-color" Styles.mainColor, class "flex-grow" ] [ text "main" ]
+        , footer [ style "height" "10%", style "background-color" Styles.mainColor ] [ text "footer" ]
+        ]
+
+
+view2 : Model -> Html Msg
+view2 model =
     div []
-        [ img [ src "/logo.svg" ] []
-        , h1 [] [ text "Your Elm App is working!" ]
+        [ h1 [] [ text "Simple Food Diary" ]
         , case model.userData of
             Maybe.Nothing ->
                 button [ onClick SignIn ] [ text "Login with Google" ]
@@ -238,28 +261,24 @@ view model =
             Just userData ->
                 div []
                     [ div [ id "portion" ]
-                        [ button
-                            [ width 30
-                            , height 30
-                            , onClick <| ClickedPortion Small
-                            , class "bg-blue-500"
-                            , class "hover:bg-blue-700"
-                            , class "text-white"
-                            , class "font-bold"
-                            , class "rounded"
-                            , class "py-2"
-                            , class "px-4"
+                        [ button (Styles.portionButton ++ [ onClick <| ClickedPortion Small ])
+                            [ img (Styles.imageButton ++ [ src "/pizza-slice-solid.svg" ]) []
                             ]
-                            [ img [ width 30, height 30, src "/pizza-slice-solid.svg" ] [] ]
-                        , button [ width 30, height 30, onClick <| ClickedPortion Medium ] [ img [ width 30, height 30, src "/pizza-slice-solid.svg" ] [] ]
-                        , button [ width 30, height 30, onClick <| ClickedPortion Large ] [ img [ width 30, height 30, src "/pizza-slice-solid.svg" ] [] ]
-                        , button [ width 30, height 30, onClick <| ClickedPortion Huge ] [ img [ width 30, height 30, src "/pizza-slice-solid.svg" ] [] ]
+                        , button (Styles.portionButton ++ [ onClick <| ClickedPortion Medium ])
+                            [ img (Styles.imageButton ++ [ src "/pizza-slice-solid.svg" ]) []
+                            ]
+                        , button (Styles.portionButton ++ [ onClick <| ClickedPortion Large ])
+                            [ img (Styles.imageButton ++ [ src "/pizza-slice-solid.svg" ]) []
+                            ]
+                        , button (Styles.portionButton ++ [ onClick <| ClickedPortion Huge ])
+                            [ img (Styles.imageButton ++ [ src "/pizza-slice-solid.svg" ]) []
+                            ]
                         ]
                     , div [ id "details" ]
-                        [ button [ width 50, height 50, onClick <| ClickedVegan ] [ img [ width 50, height 50, src "/leaf-solid.svg" ] [] ]
-                        , button [ width 50, height 50, onClick <| ClickedAlcohol ] [ img [ width 50, height 50, src "/beer-solid.svg" ] [] ]
-                        , button [ width 50, height 50, onClick <| ClickedCaffeine ] [ img [ width 50, height 50, src "/coffee-solid.svg" ] [] ]
-                        , button [ width 50, height 50, onClick <| ClickedMeat ] [ img [ width 50, height 50, src "/drumstick-bite-solid.svg" ] [] ]
+                        [ button (Styles.detailButton ++ [ onClick <| ClickedVegan ]) [ img [ src "/leaf-solid.svg" ] [] ]
+                        , button (Styles.detailButton ++ [ onClick <| ClickedAlcohol ]) [ img [ src "/beer-solid.svg" ] [] ]
+                        , button (Styles.detailButton ++ [ onClick <| ClickedCaffeine ]) [ img [ src "/coffee-solid.svg" ] [] ]
+                        , button (Styles.detailButton ++ [ onClick <| ClickedMeat ]) [ img [ src "/drumstick-bite-solid.svg" ] [] ]
                         ]
                     , button [ onClick <| SendCurrentFoodLog model.currentFoodLog userData.uid ] [ text "Send" ]
                     ]
