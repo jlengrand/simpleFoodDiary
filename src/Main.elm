@@ -178,7 +178,9 @@ update msg model =
         ClickedPortion portion ->
             let
                 newModel =
-                    model
+                    model.currentFoodLog
+                        |> setPortion portion
+                        |> asCurrentFoodLogIn model
             in
             ( newModel, Cmd.none )
 
