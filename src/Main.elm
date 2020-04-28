@@ -2,7 +2,7 @@ module Main exposing (..)
 
 import Browser
 import Flip
-import Html exposing (Attribute, Html, button, div, footer, h1, header, img, main_, text)
+import Html exposing (Attribute, Html, button, div, footer, h1, header, img, main_, p, span, text)
 import Html.Attributes exposing (class, height, id, src, style, width)
 import Html.Events exposing (onClick)
 import Json.Decode
@@ -223,23 +223,35 @@ setVegan value foodLog =
 view : Model -> Html Msg
 view model =
     div
-        [ class "flex-col"
-        , style "height" "100%"
+        [ style "height" "100%"
+        , style "width" "100%"
         ]
-        [ header
-            [ style "height" "10%"
-            , style "background-color" Styles.mainColor
-            , class "p-2"
+        [ div
+            [ class "flex-col max-w-screen-lg mx-auto h-full"
             ]
-            [ case model.userData of
-                Maybe.Nothing ->
-                    div [] []
+            [ header
+                [ style "height" "10%"
+                , style "background-color" Styles.mainColor
+                , class "p-2"
+                ]
+                [ case model.userData of
+                    Maybe.Nothing ->
+                        div [] []
 
-                Just userData ->
-                    img [ class "float-right h-full", src "/user-circle-solid.svg" ] []
+                    Just userData ->
+                        div [ class "float-right h-full" ]
+                            [ span [ class "h-full" ] [ text userData.email ]
+                            , img [ class "inline h-full pl-2", src "/user-circle-solid.svg" ] []
+                            ]
+                ]
+            , main_ [ style "height" "80%", style "background-color" Styles.mainColor, class "flex-grow" ] [ text "main" ]
+            , footer
+                [ style "height" "10%"
+                , style "background-color" Styles.mainColor
+                , class "py-4"
+                ]
+                [ text "footer" ]
             ]
-        , main_ [ style "height" "80%", style "background-color" Styles.mainColor, class "flex-grow" ] [ text "main" ]
-        , footer [ style "height" "10%", style "background-color" Styles.mainColor ] [ text "footer" ]
         ]
 
 
