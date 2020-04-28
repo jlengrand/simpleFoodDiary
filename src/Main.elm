@@ -1,9 +1,10 @@
 module Main exposing (..)
 
+import Accessibility.Role
 import Browser
 import Flip
-import Html exposing (Attribute, Html, button, div, footer, h1, header, img, main_, p, span, text)
-import Html.Attributes exposing (class, height, id, src, style, width)
+import Html exposing (Attribute, Html, button, div, footer, h1, header, img, main_, span, text)
+import Html.Attributes exposing (alt, class, id, src, style)
 import Html.Events exposing (onClick)
 import Json.Decode
 import Json.Decode.Pipeline
@@ -241,7 +242,14 @@ view model =
                     Just userData ->
                         div [ class "float-right h-full" ]
                             [ span [ class "h-full" ] [ text userData.email ]
-                            , img [ class "inline h-full pl-2", src "/user-circle-solid.svg" ] []
+                            , img
+                                [ class "inline h-full pl-2"
+                                , src "/user-circle-solid.svg"
+                                , alt "logout image"
+                                , Accessibility.Role.button
+                                , onClick LogOut
+                                ]
+                                []
                             ]
                 ]
             , main_ [ style "height" "80%", style "background-color" Styles.mainColor, class "flex-grow" ] [ text "main" ]
