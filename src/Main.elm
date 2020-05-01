@@ -252,7 +252,21 @@ view model =
                                 []
                             ]
                 ]
-            , main_ [ style "height" "80%", style "background-color" Styles.mainColor, class "flex-grow" ] [ text "main" ]
+            , main_
+                [ style "height" "80%"
+                , style "background-color" Styles.mainColor
+                , class "flex-grow"
+                ]
+                [ h1 [] [ text "Lean Food Diary" ]
+                , case model.userData of
+                    Maybe.Nothing ->
+                        div []
+                            [ button [ onClick SignIn ] [ text "Login with Google" ]
+                            ]
+
+                    Just userData ->
+                        div [] []
+                ]
             , footer
                 [ style "height" "10%"
                 , style "background-color" Styles.mainColor
