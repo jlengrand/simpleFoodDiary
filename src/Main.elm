@@ -1,6 +1,9 @@
 module Main exposing (..)
 
 import Browser
+import Browser.Events
+import Element
+import Element.Background
 import Flip
 import Html exposing (Html, button, div, h1, img, text)
 import Html.Attributes exposing (height, id, src, width)
@@ -9,11 +12,24 @@ import Json.Decode
 import Json.Decode.Pipeline
 import Json.Encode
 import Ports
+import Styles
 import Time
 
 
 
 ---- MODEL ----
+
+
+type alias Flags =
+    { startingWidth : Int
+    , startingHeight : Int
+    }
+
+
+type alias ScreenSize =
+    { width : Int
+    , height : Int
+    }
 
 
 type alias UserData =
@@ -59,14 +75,16 @@ type alias FoodLog =
 
 type alias Model =
     { userData : Maybe UserData
+    , screenSize : ScreenSize
     , currentFoodLog : FoodLog
     }
 
 
-init : ( Model, Cmd Msg )
-init =
+init : Flags -> ( Model, Cmd Msg )
+init flags =
     ( { userData = Just fakeUserData
       , currentFoodLog = defaultFoodLog
+      , screenSize = { width = flags.startingWidth, height = flags.startingHeight }
       }
     , Cmd.none
     )
@@ -116,6 +134,7 @@ type Msg
     | ClickedCaffeine
     | ClickedMeat
     | ClickedPortion Portion
+    | GotNewScreenSize ScreenSize
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -177,9 +196,14 @@ update msg model =
         ClickedPortion portion ->
             let
                 newModel =
-                    model
+                    model.currentFoodLog
+                        |> setPortion portion
+                        |> asCurrentFoodLogIn model
             in
             ( newModel, Cmd.none )
+
+        GotNewScreenSize screenSize ->
+            ( { model | screenSize = screenSize }, Cmd.none )
 
 
 asCurrentFoodLogIn : Model -> FoodLog -> Model
@@ -219,6 +243,54 @@ setVegan value foodLog =
 
 view : Model -> Html Msg
 view model =
+    Element.layout
+        [ Element.height Element.fill
+        , Element.width Element.fill
+        ]
+        (Element.column
+            [ Element.height Element.fill
+            , Element.width
+                (Element.fill
+                    |> Element.maximum Styles.maxWidth
+                )
+            , Element.Background.color Styles.mainColor
+            , Element.centerX
+            ]
+            [ -- header
+              Element.row
+                [ Element.height <| Element.px (get10PercentHeight model.screenSize)
+                , Element.padding <| get1PercentHeight model.screenSize
+                , Element.width Element.fill
+                ]
+                [ Element.image
+                    [ Element.alignRight
+                    , Element.width <| Element.px (get8PercentHeight model.screenSize)
+                    , Element.height Element.fill
+                    ]
+                    { src = "/user-circle-solid.svg"
+                    , description = "Logout icon"
+                    }
+                ]
+
+            -- main
+            , Element.row
+                [ Element.height Element.fill
+                , Element.width Element.fill
+                ]
+                []
+
+            -- footer
+            , Element.row
+                [ Element.height <| Element.px (get10PercentHeight model.screenSize)
+                , Element.width Element.fill
+                ]
+                []
+            ]
+        )
+
+
+view2 : Model -> Html Msg
+view2 model =
     div []
         [ img [ src "/logo.svg" ] []
         , h1 [] [ text "Your Elm App is working!" ]
@@ -254,6 +326,26 @@ view model =
         ]
 
 
+getPercentage : Int -> Int -> Int
+getPercentage original percentage =
+    original * percentage // 100
+
+
+get8PercentHeight : ScreenSize -> Int
+get8PercentHeight size =
+    getPercentage size.height 8
+
+
+get1PercentHeight : ScreenSize -> Int
+get1PercentHeight size =
+    getPercentage size.height 1
+
+
+get10PercentHeight : ScreenSize -> Int
+get10PercentHeight size =
+    getPercentage size.height 10
+
+
 
 ---- PROGRAM ----
 
@@ -284,14 +376,15 @@ subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
         [ Ports.signInInfo (Json.Decode.decodeValue userDataDecoder >> LoggedInData)
+        , Browser.Events.onResize (\width height -> GotNewScreenSize { width = width, height = height })
         ]
 
 
-main : Program () Model Msg
+main : Program Flags Model Msg
 main =
     Browser.element
         { view = view
-        , init = \_ -> init
+        , init = init
         , update = update
         , subscriptions = subscriptions
         }
