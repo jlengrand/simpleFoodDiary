@@ -4,6 +4,7 @@ import Browser
 import Browser.Events
 import Element
 import Element.Background
+import Element.Events
 import Flip
 import Html exposing (Html, button, div, h1, img, text)
 import Html.Attributes exposing (height, id, src, width)
@@ -261,16 +262,28 @@ view model =
                 [ Element.height <| Element.px (get10PercentHeight model.screenSize)
                 , Element.padding <| get1PercentHeight model.screenSize
                 , Element.width Element.fill
+                , Element.spacing <| get1PercentHeight model.screenSize
                 ]
-                [ Element.image
-                    [ Element.alignRight
-                    , Element.width <| Element.px (get8PercentHeight model.screenSize)
-                    , Element.height Element.fill
-                    ]
-                    { src = "/user-circle-solid.svg"
-                    , description = "Logout icon"
-                    }
-                ]
+                (case model.userData of
+                    Just data ->
+                        [ Element.el
+                            [ Element.alignRight
+                            ]
+                            (Element.text data.email)
+                        , Element.image
+                            [ Element.alignRight
+                            , Element.width <| Element.px (get8PercentHeight model.screenSize)
+                            , Element.height Element.fill
+                            , Element.Events.onClick LogOut
+                            ]
+                            { src = "/user-circle-solid.svg"
+                            , description = "Logout icon"
+                            }
+                        ]
+
+                    Maybe.Nothing ->
+                        [ Element.none ]
+                )
 
             -- main
             , Element.row
