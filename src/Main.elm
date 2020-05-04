@@ -5,6 +5,7 @@ import Browser.Events
 import Element
 import Element.Background
 import Element.Events
+import Element.Input
 import Flip
 import Html exposing (Html, button, div, h1, img, text)
 import Html.Attributes exposing (height, id, src, width)
@@ -286,11 +287,18 @@ view model =
                 )
 
             -- main
-            , Element.row
+            , Element.column
                 [ Element.height Element.fill
                 , Element.width Element.fill
+                , Element.centerX
                 ]
-                []
+                (case model.userData of
+                    Just userData ->
+                        viewMain model userData
+
+                    Maybe.Nothing ->
+                        [ Element.none ]
+                )
 
             -- footer
             , Element.row
@@ -300,6 +308,64 @@ view model =
                 []
             ]
         )
+
+
+viewMain : Model -> UserData -> List (Element.Element Msg)
+viewMain model userData =
+    -- title
+    [ Element.column [ Element.centerX ] [ Element.el [] (Element.text "Simple Food Log") ]
+    , -- portion size
+      Element.column [ Element.centerX ]
+        [ Element.el [] (Element.text "Choose your portion size!")
+        , Element.row [ Element.spaceEvenly ]
+            [ Element.image
+                [ Element.alignRight
+                , Element.width <| Element.px (get8PercentHeight model.screenSize)
+                , Element.height Element.fill
+                , Element.Events.onClick (ClickedPortion Small)
+                ]
+                { src = "/pizza-slice-solid.svg"
+                , description = "Small portion button"
+                }
+            , Element.image
+                [ Element.alignRight
+                , Element.width <| Element.px (get8PercentHeight model.screenSize)
+                , Element.height Element.fill
+                , Element.Events.onClick (ClickedPortion Medium)
+                ]
+                { src = "/pizza-slice-solid.svg"
+                , description = "Medium portion button"
+                }
+            , Element.image
+                [ Element.alignRight
+                , Element.width <| Element.px (get8PercentHeight model.screenSize)
+                , Element.height Element.fill
+                , Element.Events.onClick (ClickedPortion Large)
+                ]
+                { src = "/pizza-slice-solid.svg"
+                , description = "Large portion button"
+                }
+            , Element.image
+                [ Element.alignRight
+                , Element.width <| Element.px (get8PercentHeight model.screenSize)
+                , Element.height Element.fill
+                , Element.Events.onClick (ClickedPortion Huge)
+                ]
+                { src = "/pizza-slice-solid.svg"
+                , description = "Huge portion button"
+                }
+            ]
+        ]
+    , -- options
+      Element.column [] [ Element.el [] (Element.text "Any specifics about your meal?") ]
+    , -- validate
+      Element.column []
+        [ Element.Input.button []
+            { onPress = Just <| SendCurrentFoodLog model.currentFoodLog userData.uid
+            , label = Element.text "Send your log!"
+            }
+        ]
+    ]
 
 
 view2 : Model -> Html Msg
