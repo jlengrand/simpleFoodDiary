@@ -135,6 +135,7 @@ type Msg
     | ClickedAlcohol
     | ClickedCaffeine
     | ClickedMeat
+    | ClickedKeto
     | ClickedPortion Portion
     | GotNewScreenSize ScreenSize
 
@@ -195,6 +196,15 @@ update msg model =
             in
             ( newModel, Cmd.none )
 
+        ClickedKeto ->
+            let
+                newModel =
+                    model.currentFoodLog
+                        |> setKeto (not model.currentFoodLog.keto)
+                        |> asCurrentFoodLogIn model
+            in
+            ( newModel, Cmd.none )
+
         ClickedPortion portion ->
             let
                 newModel =
@@ -223,6 +233,11 @@ setPortion portion foodLog =
     { foodLog | portion = portion }
 
 
+setKeto : Bool -> FoodLog -> FoodLog
+setKeto value foodLog =
+    { foodLog | keto = value }
+
+
 setMeat : Bool -> FoodLog -> FoodLog
 setMeat value foodLog =
     { foodLog | meat = value }
@@ -248,6 +263,7 @@ view model =
     Element.layout
         [ Element.height Element.fill
         , Element.width Element.fill
+        , Element.padding 20
         ]
         (Element.column
             [ Element.height Element.fill
@@ -286,6 +302,9 @@ view model =
                         [ Element.none ]
                 )
 
+            -- app title
+            , Element.el [] <| showMainTitle
+
             -- main
             , Element.column
                 [ Element.height Element.fill
@@ -297,7 +316,7 @@ view model =
                         viewMain model userData
 
                     Maybe.Nothing ->
-                        [ Element.none ]
+                        viewLoginMain model
                 )
 
             -- footer
@@ -310,59 +329,161 @@ view model =
         )
 
 
+showMainTitle : Element.Element Msg
+showMainTitle =
+    Element.column [ Element.centerX ] [ Element.el [] (Element.text "Simple Food Log") ]
+
+
+viewLoginMain : Model -> List (Element.Element Msg)
+viewLoginMain model =
+    [ Element.el
+        [ Element.width Element.fill
+        , Element.height Element.fill
+        ]
+      <|
+        Element.Input.button
+            [ Element.centerX
+            , Element.centerY
+            ]
+            { onPress = Just SignIn
+            , label = Element.text "Login with Google"
+            }
+    ]
+
+
 viewMain : Model -> UserData -> List (Element.Element Msg)
 viewMain model userData =
-    -- title
-    [ Element.column [ Element.centerX ] [ Element.el [] (Element.text "Simple Food Log") ]
-    , -- portion size
-      Element.column [ Element.centerX ]
-        [ Element.el [] (Element.text "Choose your portion size!")
-        , Element.row [ Element.spaceEvenly ]
-            [ Element.image
-                [ Element.alignRight
-                , Element.width <| Element.px (get8PercentHeight model.screenSize)
-                , Element.height Element.fill
-                , Element.Events.onClick (ClickedPortion Small)
-                ]
-                { src = "/pizza-slice-solid.svg"
-                , description = "Small portion button"
-                }
-            , Element.image
-                [ Element.alignRight
-                , Element.width <| Element.px (get8PercentHeight model.screenSize)
-                , Element.height Element.fill
-                , Element.Events.onClick (ClickedPortion Medium)
-                ]
-                { src = "/pizza-slice-solid.svg"
-                , description = "Medium portion button"
-                }
-            , Element.image
-                [ Element.alignRight
-                , Element.width <| Element.px (get8PercentHeight model.screenSize)
-                , Element.height Element.fill
-                , Element.Events.onClick (ClickedPortion Large)
-                ]
-                { src = "/pizza-slice-solid.svg"
-                , description = "Large portion button"
-                }
-            , Element.image
-                [ Element.alignRight
-                , Element.width <| Element.px (get8PercentHeight model.screenSize)
-                , Element.height Element.fill
-                , Element.Events.onClick (ClickedPortion Huge)
-                ]
-                { src = "/pizza-slice-solid.svg"
-                , description = "Huge portion button"
-                }
+    [ -- portion size
+      Element.column
+        [ Element.width Element.fill
+        , Element.centerX
+        , Element.height <| Element.fillPortion 1
+        ]
+        [ Element.el [ Element.height <| Element.fillPortion 1 ] (Element.text "Choose your portion size!")
+        , Element.row
+            [ Element.spaceEvenly
+            , Element.width Element.fill
+            , Element.height <| Element.fillPortion 3
+            ]
+            [ Element.el [] <|
+                Element.image
+                    [ Element.alignRight
+                    , Element.width <| Element.px (get8PercentHeight model.screenSize)
+                    , Element.height Element.fill
+                    , Element.Events.onClick (ClickedPortion Small)
+                    ]
+                    { src = "/pizza-slice-solid.svg"
+                    , description = "Small portion button"
+                    }
+            , Element.el [] <|
+                Element.image
+                    [ Element.alignRight
+                    , Element.width <| Element.px (get8PercentHeight model.screenSize)
+                    , Element.height Element.fill
+                    , Element.Events.onClick (ClickedPortion Medium)
+                    ]
+                    { src = "/pizza-slice-solid.svg"
+                    , description = "Medium portion button"
+                    }
+            , Element.el [] <|
+                Element.image
+                    [ Element.alignRight
+                    , Element.width <| Element.px (get8PercentHeight model.screenSize)
+                    , Element.height Element.fill
+                    , Element.Events.onClick (ClickedPortion Large)
+                    ]
+                    { src = "/pizza-slice-solid.svg"
+                    , description = "Large portion button"
+                    }
+            , Element.el [] <|
+                Element.image
+                    [ Element.alignRight
+                    , Element.width <| Element.px (get8PercentHeight model.screenSize)
+                    , Element.height Element.fill
+                    , Element.Events.onClick (ClickedPortion Huge)
+                    ]
+                    { src = "/pizza-slice-solid.svg"
+                    , description = "Huge portion button"
+                    }
             ]
         ]
     , -- options
-      Element.column [] [ Element.el [] (Element.text "Any specifics about your meal?") ]
+      Element.column
+        [ Element.height <| Element.fillPortion 1
+        ]
+        [ Element.el
+            [ Element.width Element.fill
+            , Element.height <| Element.fillPortion 1
+            ]
+            (Element.text "Any specifics about your meal?")
+        , Element.wrappedRow
+            [ Element.spaceEvenly
+            , Element.width Element.fill
+            , Element.height <| Element.fillPortion 3
+            ]
+            [ Element.el [] <|
+                Element.image
+                    [ Element.alignRight
+                    , Element.width <| Element.px (get8PercentHeight model.screenSize)
+                    , Element.height Element.fill
+                    , Element.Events.onClick ClickedAlcohol
+                    ]
+                    { src = "/beer-solid.svg"
+                    , description = "Alcohol option"
+                    }
+            , Element.el [] <|
+                Element.image
+                    [ Element.alignRight
+                    , Element.width <| Element.px (get8PercentHeight model.screenSize)
+                    , Element.height Element.fill
+                    , Element.Events.onClick ClickedCaffeine
+                    ]
+                    { src = "/coffee-solid.svg"
+                    , description = "Coffee option"
+                    }
+            , Element.el [] <|
+                Element.image
+                    [ Element.alignRight
+                    , Element.width <| Element.px (get8PercentHeight model.screenSize)
+                    , Element.height Element.fill
+                    , Element.Events.onClick ClickedMeat
+                    ]
+                    { src = "/drumstick-bite-solid.svg"
+                    , description = "Meat option"
+                    }
+            , Element.el [] <|
+                Element.image
+                    [ Element.alignRight
+                    , Element.width <| Element.px (get8PercentHeight model.screenSize)
+                    , Element.height Element.fill
+                    , Element.Events.onClick ClickedVegan
+                    ]
+                    { src = "/leaf-solid.svg"
+                    , description = "Vegan option"
+                    }
+            , Element.el [] <|
+                Element.image
+                    [ Element.alignRight
+                    , Element.width <| Element.px (get8PercentHeight model.screenSize)
+                    , Element.height Element.fill
+                    , Element.Events.onClick ClickedKeto
+                    ]
+                    { src = "/bacon-solid.svg"
+                    , description = "KEto option"
+                    }
+            ]
+        ]
     , -- validate
-      Element.column []
-        [ Element.Input.button []
+      Element.column
+        [ Element.height <| Element.fillPortion 1
+        , Element.width Element.fill
+        ]
+        [ Element.Input.button
+            [ Element.centerX
+            , Element.centerY
+            ]
             { onPress = Just <| SendCurrentFoodLog model.currentFoodLog userData.uid
-            , label = Element.text "Send your log!"
+            , label = Element.el [ Element.centerX, Element.centerY ] <| Element.text "Send your log!"
             }
         ]
     ]
