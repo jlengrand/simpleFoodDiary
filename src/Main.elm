@@ -303,7 +303,12 @@ view model =
                 )
 
             -- app title
-            , Element.el [] <| showMainTitle
+            , Element.el
+                [ Element.height <| Element.px (getPercentHeight model.screenSize 20)
+                , Element.width Element.fill
+                ]
+              <|
+                showMainTitle
 
             -- main
             , Element.column
@@ -331,7 +336,7 @@ view model =
 
 showMainTitle : Element.Element Msg
 showMainTitle =
-    Element.column [ Element.centerX ] [ Element.el [] (Element.text "Simple Food Log") ]
+    Element.el [ Element.centerX, Element.centerY ] (Element.text "Simple Food Log")
 
 
 viewLoginMain : Model -> List (Element.Element Msg)
@@ -410,6 +415,7 @@ viewMain model userData =
     , -- options
       Element.column
         [ Element.height <| Element.fillPortion 1
+        , Element.width Element.fill
         ]
         [ Element.el
             [ Element.width Element.fill
@@ -531,14 +537,19 @@ getPercentage original percentage =
     original * percentage // 100
 
 
+getPercentHeight : ScreenSize -> Int -> Int
+getPercentHeight size percentage =
+    getPercentage size.height percentage
+
+
 get8PercentHeight : ScreenSize -> Int
 get8PercentHeight size =
-    getPercentage size.height 8
+    getPercentHeight size 8
 
 
 get1PercentHeight : ScreenSize -> Int
 get1PercentHeight size =
-    getPercentage size.height 1
+    getPercentHeight size 1
 
 
 get10PercentHeight : ScreenSize -> Int
