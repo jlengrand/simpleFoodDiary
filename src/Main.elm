@@ -4,6 +4,7 @@ import Browser
 import Browser.Events
 import Element
 import Element.Background
+import Element.Border
 import Element.Events
 import Element.Input
 import Flip
@@ -315,6 +316,7 @@ view model =
                 [ Element.height Element.fill
                 , Element.width Element.fill
                 , Element.centerX
+                , Element.padding 10
                 ]
                 (case model.userData of
                     Just userData ->
@@ -356,6 +358,25 @@ viewLoginMain model =
     ]
 
 
+portionSizer : String -> Portion -> Int -> Element.Element Msg
+portionSizer description portion sizePx =
+    Element.el
+        [ Element.Background.color Styles.darkerbeige
+        , Element.Border.rounded 50
+        , Element.padding 10
+        ]
+    <|
+        Element.image
+            [ Element.alignRight
+            , Element.width <| Element.px sizePx
+            , Element.height Element.fill
+            , Element.Events.onClick (ClickedPortion portion)
+            ]
+            { src = "/pizza-slice-solid.svg"
+            , description = description
+            }
+
+
 viewMain : Model -> UserData -> List (Element.Element Msg)
 viewMain model userData =
     [ -- portion size
@@ -364,52 +385,20 @@ viewMain model userData =
         , Element.centerX
         , Element.height <| Element.fillPortion 1
         ]
-        [ Element.el [ Element.height <| Element.fillPortion 1 ] (Element.text "Choose your portion size!")
+        [ Element.el
+            [ Element.height <| Element.fillPortion 1
+            , Element.centerX
+            ]
+            (Element.text "Your portion size")
         , Element.row
             [ Element.spaceEvenly
             , Element.width Element.fill
             , Element.height <| Element.fillPortion 3
             ]
-            [ Element.el [] <|
-                Element.image
-                    [ Element.alignRight
-                    , Element.width <| Element.px (get8PercentHeight model.screenSize)
-                    , Element.height Element.fill
-                    , Element.Events.onClick (ClickedPortion Small)
-                    ]
-                    { src = "/pizza-slice-solid.svg"
-                    , description = "Small portion button"
-                    }
-            , Element.el [] <|
-                Element.image
-                    [ Element.alignRight
-                    , Element.width <| Element.px (get8PercentHeight model.screenSize)
-                    , Element.height Element.fill
-                    , Element.Events.onClick (ClickedPortion Medium)
-                    ]
-                    { src = "/pizza-slice-solid.svg"
-                    , description = "Medium portion button"
-                    }
-            , Element.el [] <|
-                Element.image
-                    [ Element.alignRight
-                    , Element.width <| Element.px (get8PercentHeight model.screenSize)
-                    , Element.height Element.fill
-                    , Element.Events.onClick (ClickedPortion Large)
-                    ]
-                    { src = "/pizza-slice-solid.svg"
-                    , description = "Large portion button"
-                    }
-            , Element.el [] <|
-                Element.image
-                    [ Element.alignRight
-                    , Element.width <| Element.px (get8PercentHeight model.screenSize)
-                    , Element.height Element.fill
-                    , Element.Events.onClick (ClickedPortion Huge)
-                    ]
-                    { src = "/pizza-slice-solid.svg"
-                    , description = "Huge portion button"
-                    }
+            [ portionSizer "Small portion button" Small (getPercentHeight model.screenSize 5)
+            , portionSizer "Medium portion button" Medium (getPercentHeight model.screenSize 6)
+            , portionSizer "Large portion button" Large (getPercentHeight model.screenSize 7)
+            , portionSizer "Huge portion button" Huge (getPercentHeight model.screenSize 8)
             ]
         ]
     , -- options
@@ -420,8 +409,9 @@ viewMain model userData =
         [ Element.el
             [ Element.width Element.fill
             , Element.height <| Element.fillPortion 1
+            , Element.centerX
             ]
-            (Element.text "Any specifics about your meal?")
+            (Element.text "Any specifics?")
         , Element.wrappedRow
             [ Element.spaceEvenly
             , Element.width Element.fill

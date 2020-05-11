@@ -6,6 +6,7 @@ import Element exposing (Color)
 
 -- COLORS
 -- beige: #fff8f0
+-- darkerbeige: #c1b3a3
 -- green: #00916e
 -- blue: #344966
 -- red: #eb4511
@@ -14,6 +15,10 @@ import Element exposing (Color)
 
 beige =
     Element.rgb255 255 248 240
+
+
+darkerbeige =
+    Element.rgb255 193 179 163
 
 
 green =
