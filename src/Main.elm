@@ -375,8 +375,7 @@ portionSizer selected description portion sizePx =
         ]
     <|
         Element.image
-            [ Element.alignRight
-            , Element.width <| Element.px sizePx
+            [ Element.width <| Element.px sizePx
             , Element.height Element.fill
             , Element.Events.onClick (ClickedPortion portion)
             ]
@@ -388,6 +387,32 @@ portionSizer selected description portion sizePx =
 isSelected : Model -> Portion -> Bool
 isSelected model portion =
     model.currentFoodLog.portion == portion
+
+
+itemSelection : Bool -> String -> String -> Msg -> ScreenSize -> Element.Element Msg
+itemSelection selected src description msg screenSize =
+    Element.el
+        [ Element.Background.color Styles.darkerbeige
+        , Element.Border.rounded 50
+        , Element.padding 10
+        , Element.Border.color Styles.black
+        , Element.Border.width
+            (if selected then
+                3
+
+             else
+                0
+            )
+        ]
+    <|
+        Element.image
+            [ Element.width <| Element.px (get8PercentHeight screenSize)
+            , Element.height Element.fill
+            , Element.Events.onClick msg
+            ]
+            { src = src
+            , description = description
+            }
 
 
 viewMain : Model -> UserData -> List (Element.Element Msg)
@@ -430,56 +455,11 @@ viewMain model userData =
             , Element.width Element.fill
             , Element.height <| Element.fillPortion 3
             ]
-            [ Element.el [] <|
-                Element.image
-                    [ Element.alignRight
-                    , Element.width <| Element.px (get8PercentHeight model.screenSize)
-                    , Element.height Element.fill
-                    , Element.Events.onClick ClickedAlcohol
-                    ]
-                    { src = "/beer-solid.svg"
-                    , description = "Alcohol option"
-                    }
-            , Element.el [] <|
-                Element.image
-                    [ Element.alignRight
-                    , Element.width <| Element.px (get8PercentHeight model.screenSize)
-                    , Element.height Element.fill
-                    , Element.Events.onClick ClickedCaffeine
-                    ]
-                    { src = "/coffee-solid.svg"
-                    , description = "Coffee option"
-                    }
-            , Element.el [] <|
-                Element.image
-                    [ Element.alignRight
-                    , Element.width <| Element.px (get8PercentHeight model.screenSize)
-                    , Element.height Element.fill
-                    , Element.Events.onClick ClickedMeat
-                    ]
-                    { src = "/drumstick-bite-solid.svg"
-                    , description = "Meat option"
-                    }
-            , Element.el [] <|
-                Element.image
-                    [ Element.alignRight
-                    , Element.width <| Element.px (get8PercentHeight model.screenSize)
-                    , Element.height Element.fill
-                    , Element.Events.onClick ClickedVegan
-                    ]
-                    { src = "/leaf-solid.svg"
-                    , description = "Vegan option"
-                    }
-            , Element.el [] <|
-                Element.image
-                    [ Element.alignRight
-                    , Element.width <| Element.px (get8PercentHeight model.screenSize)
-                    , Element.height Element.fill
-                    , Element.Events.onClick ClickedKeto
-                    ]
-                    { src = "/bacon-solid.svg"
-                    , description = "KEto option"
-                    }
+            [ itemSelection (model.currentFoodLog.alcohol == True) "/beer-solid.svg" "Alcohol option" ClickedAlcohol model.screenSize
+            , itemSelection (model.currentFoodLog.caffeine == True) "/coffee-solid.svg" "Coffee option" ClickedCaffeine model.screenSize
+            , itemSelection (model.currentFoodLog.meat == True) "/drumstick-bite-solid.svg" "Meat option" ClickedMeat model.screenSize
+            , itemSelection (model.currentFoodLog.vegan == True) "/leaf-solid.svg" "Vegan option" ClickedVegan model.screenSize
+            , itemSelection (model.currentFoodLog.keto == True) "/bacon-solid.svg" "Keto option" ClickedKeto model.screenSize
             ]
         ]
     , -- validate
