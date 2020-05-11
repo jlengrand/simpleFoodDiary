@@ -358,12 +358,20 @@ viewLoginMain model =
     ]
 
 
-portionSizer : String -> Portion -> Int -> Element.Element Msg
-portionSizer description portion sizePx =
+portionSizer : Bool -> String -> Portion -> Int -> Element.Element Msg
+portionSizer selected description portion sizePx =
     Element.el
         [ Element.Background.color Styles.darkerbeige
         , Element.Border.rounded 50
         , Element.padding 10
+        , Element.Border.color Styles.black
+        , Element.Border.width
+            (if selected then
+                3
+
+             else
+                0
+            )
         ]
     <|
         Element.image
@@ -375,6 +383,11 @@ portionSizer description portion sizePx =
             { src = "/pizza-slice-solid.svg"
             , description = description
             }
+
+
+isSelected : Model -> Portion -> Bool
+isSelected model portion =
+    model.currentFoodLog.portion == portion
 
 
 viewMain : Model -> UserData -> List (Element.Element Msg)
@@ -395,10 +408,10 @@ viewMain model userData =
             , Element.width Element.fill
             , Element.height <| Element.fillPortion 3
             ]
-            [ portionSizer "Small portion button" Small (getPercentHeight model.screenSize 5)
-            , portionSizer "Medium portion button" Medium (getPercentHeight model.screenSize 6)
-            , portionSizer "Large portion button" Large (getPercentHeight model.screenSize 7)
-            , portionSizer "Huge portion button" Huge (getPercentHeight model.screenSize 8)
+            [ portionSizer (isSelected model Small) "Small portion button" Small (getPercentHeight model.screenSize 5)
+            , portionSizer (isSelected model Medium) "Medium portion button" Medium (getPercentHeight model.screenSize 6)
+            , portionSizer (isSelected model Large) "Large portion button" Large (getPercentHeight model.screenSize 7)
+            , portionSizer (isSelected model Huge) "Huge portion button" Huge (getPercentHeight model.screenSize 8)
             ]
         ]
     , -- options

@@ -7,6 +7,7 @@ import Element exposing (Color)
 -- COLORS
 -- beige: #fff8f0
 -- darkerbeige: #c1b3a3
+-- darkerbeige inverted: #3e4c5c
 -- green: #00916e
 -- blue: #344966
 -- red: #eb4511
@@ -19,6 +20,10 @@ beige =
 
 darkerbeige =
     Element.rgb255 193 179 163
+
+
+darkerbeigeinverted =
+    Element.rgb255 136 116 91
 
 
 green =
