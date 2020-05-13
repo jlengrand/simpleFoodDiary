@@ -15,7 +15,7 @@ const firebaseConfig = {
   appId: process.env.ELM_APP_APP_ID
 };
 
-console.log(firebaseConfig);
+// console.log(firebaseConfig);
 
 firebase.initializeApp(firebaseConfig);
 

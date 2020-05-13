@@ -12,6 +12,11 @@ import Element exposing (Color)
 -- blue: #344966
 -- red: #eb4511
 -- black: #0a0a0a
+-- graybeige : #f8f8f8
+
+
+graybeige =
+    Element.rgb255 248 248 248
 
 
 beige =

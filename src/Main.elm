@@ -6,6 +6,7 @@ import Element
 import Element.Background
 import Element.Border
 import Element.Events
+import Element.Font
 import Element.Input
 import Flip
 import Html exposing (Html, button, div, h1, img, text)
@@ -273,7 +274,7 @@ view model =
         }
         [ Element.height Element.fill
         , Element.width Element.fill
-        , Element.padding 20
+        , Element.Background.color Styles.graybeige
         ]
         (Element.column
             [ Element.height Element.fill
@@ -283,6 +284,7 @@ view model =
                 )
             , Element.Background.color Styles.mainColor
             , Element.centerX
+            , Element.padding 2
             ]
             [ -- header
               Element.row
@@ -295,16 +297,24 @@ view model =
                     Just data ->
                         [ Element.el
                             [ Element.alignRight
+                            , Element.Font.size 14
                             ]
                             (Element.text data.email)
-                        , Element.image
+                        , Element.Input.button
                             [ Element.alignRight
-                            , Element.width <| Element.px (get8PercentHeight model.screenSize)
+                            , Element.width <| Element.px (getPercentHeight model.screenSize 6)
                             , Element.height Element.fill
-                            , Element.Events.onClick LogOut
+                            , Element.centerX
                             ]
-                            { src = "/user-circle-solid.svg"
-                            , description = "Logout icon"
+                            { onPress = Just LogOut
+                            , label =
+                                Element.el
+                                    [ Element.width Element.fill
+                                    , Element.height Element.fill
+                                    , Element.Background.uncropped "/user-circle-solid.svg"
+                                    ]
+                                <|
+                                    Element.none
                             }
                         ]
 
