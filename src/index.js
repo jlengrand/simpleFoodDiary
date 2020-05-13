@@ -21,7 +21,11 @@ const provider = new firebase.auth.GoogleAuthProvider();
 const db = firebase.firestore();
 
 const app = Elm.Main.init({
-  node: document.getElementById('root')
+  node: document.getElementById('root'),
+  flags: {
+    startingWidth: window.innerWidth,
+    startingHeight: window.innerHeight
+  }
 });
 
 app.ports.signIn.subscribe(() => {

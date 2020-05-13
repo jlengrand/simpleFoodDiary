@@ -1,6 +1,12 @@
 module Main exposing (..)
 
 import Browser
+import Browser.Events
+import Element
+import Element.Background
+import Element.Border
+import Element.Events
+import Element.Input
 import Flip
 import Html exposing (Html, button, div, h1, img, text)
 import Html.Attributes exposing (height, id, src, width)
@@ -9,11 +15,24 @@ import Json.Decode
 import Json.Decode.Pipeline
 import Json.Encode
 import Ports
+import Styles
 import Time
 
 
 
 ---- MODEL ----
+
+
+type alias Flags =
+    { startingWidth : Int
+    , startingHeight : Int
+    }
+
+
+type alias ScreenSize =
+    { width : Int
+    , height : Int
+    }
 
 
 type alias UserData =
@@ -59,14 +78,16 @@ type alias FoodLog =
 
 type alias Model =
     { userData : Maybe UserData
+    , screenSize : ScreenSize
     , currentFoodLog : FoodLog
     }
 
 
-init : ( Model, Cmd Msg )
-init =
+init : Flags -> ( Model, Cmd Msg )
+init flags =
     ( { userData = Just fakeUserData
       , currentFoodLog = defaultFoodLog
+      , screenSize = { width = flags.startingWidth, height = flags.startingHeight }
       }
     , Cmd.none
     )
@@ -88,7 +109,7 @@ defaultFoodLog : FoodLog
 defaultFoodLog =
     -- TODO : Use latest values + current timing
     { ts = Time.millisToPosix 0
-    , portion = Medium
+    , portion = Small
     , keto = False
     , vegan = False
     , meat = False
@@ -115,7 +136,9 @@ type Msg
     | ClickedAlcohol
     | ClickedCaffeine
     | ClickedMeat
+    | ClickedKeto
     | ClickedPortion Portion
+    | GotNewScreenSize ScreenSize
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -174,12 +197,26 @@ update msg model =
             in
             ( newModel, Cmd.none )
 
+        ClickedKeto ->
+            let
+                newModel =
+                    model.currentFoodLog
+                        |> setKeto (not model.currentFoodLog.keto)
+                        |> asCurrentFoodLogIn model
+            in
+            ( newModel, Cmd.none )
+
         ClickedPortion portion ->
             let
                 newModel =
-                    model
+                    model.currentFoodLog
+                        |> setPortion portion
+                        |> asCurrentFoodLogIn model
             in
             ( newModel, Cmd.none )
+
+        GotNewScreenSize screenSize ->
+            ( { model | screenSize = screenSize }, Cmd.none )
 
 
 asCurrentFoodLogIn : Model -> FoodLog -> Model
@@ -195,6 +232,11 @@ setCurrentFoodLog foodLog model =
 setPortion : Portion -> FoodLog -> FoodLog
 setPortion portion foodLog =
     { foodLog | portion = portion }
+
+
+setKeto : Bool -> FoodLog -> FoodLog
+setKeto value foodLog =
+    { foodLog | keto = value }
 
 
 setMeat : Bool -> FoodLog -> FoodLog
@@ -219,6 +261,256 @@ setVegan value foodLog =
 
 view : Model -> Html Msg
 view model =
+    Element.layoutWith
+        { options =
+            [ Element.noHover
+            , Element.focusStyle
+                { borderColor = Maybe.Nothing
+                , backgroundColor = Maybe.Nothing
+                , shadow = Maybe.Nothing
+                }
+            ]
+        }
+        [ Element.height Element.fill
+        , Element.width Element.fill
+        , Element.padding 20
+        ]
+        (Element.column
+            [ Element.height Element.fill
+            , Element.width
+                (Element.fill
+                    |> Element.maximum Styles.maxWidth
+                )
+            , Element.Background.color Styles.mainColor
+            , Element.centerX
+            ]
+            [ -- header
+              Element.row
+                [ Element.height <| Element.px (get10PercentHeight model.screenSize)
+                , Element.padding <| get1PercentHeight model.screenSize
+                , Element.width Element.fill
+                , Element.spacing <| get1PercentHeight model.screenSize
+                ]
+                (case model.userData of
+                    Just data ->
+                        [ Element.el
+                            [ Element.alignRight
+                            ]
+                            (Element.text data.email)
+                        , Element.image
+                            [ Element.alignRight
+                            , Element.width <| Element.px (get8PercentHeight model.screenSize)
+                            , Element.height Element.fill
+                            , Element.Events.onClick LogOut
+                            ]
+                            { src = "/user-circle-solid.svg"
+                            , description = "Logout icon"
+                            }
+                        ]
+
+                    Maybe.Nothing ->
+                        [ Element.none ]
+                )
+
+            -- app title
+            , Element.el
+                [ Element.height <| Element.px (getPercentHeight model.screenSize 20)
+                , Element.width Element.fill
+                ]
+              <|
+                showMainTitle
+
+            -- main
+            , Element.column
+                [ Element.height Element.fill
+                , Element.width Element.fill
+                , Element.centerX
+                , Element.padding 30
+                ]
+                (case model.userData of
+                    Just userData ->
+                        viewMain model userData
+
+                    Maybe.Nothing ->
+                        viewLoginMain model
+                )
+
+            -- footer
+            , Element.row
+                [ Element.height <| Element.px (get10PercentHeight model.screenSize)
+                , Element.width Element.fill
+                ]
+                []
+            ]
+        )
+
+
+showMainTitle : Element.Element Msg
+showMainTitle =
+    Element.el [ Element.centerX, Element.centerY ] (Element.text "Simple Food Log")
+
+
+viewLoginMain : Model -> List (Element.Element Msg)
+viewLoginMain model =
+    [ Element.el
+        [ Element.width Element.fill
+        , Element.height Element.fill
+        ]
+      <|
+        Element.Input.button
+            [ Element.centerX
+            , Element.centerY
+            ]
+            { onPress = Just SignIn
+            , label = Element.text "Login with Google"
+            }
+    ]
+
+
+portionSizer : Bool -> Portion -> Int -> Element.Element Msg
+portionSizer selected portion sizePx =
+    Element.el
+        [ Element.Background.color Styles.darkerbeige
+        , Element.Border.rounded 50
+        , Element.Border.color Styles.black
+        , Element.Border.width
+            (if selected then
+                3
+
+             else
+                0
+            )
+        , Element.width <| Element.px sizePx
+        , Element.height <| Element.px sizePx
+        , Element.centerY
+        ]
+    <|
+        Element.Input.button
+            [ Element.width Element.fill
+            , Element.height Element.fill
+            , Element.padding (getPercentage sizePx 25)
+            ]
+            { onPress = Just (ClickedPortion portion)
+            , label =
+                Element.el
+                    [ Element.width Element.fill
+                    , Element.height Element.fill
+                    , Element.Background.uncropped "/pizza-slice-solid.svg"
+                    ]
+                <|
+                    Element.none
+            }
+
+
+isSelected : Model -> Portion -> Bool
+isSelected model portion =
+    model.currentFoodLog.portion == portion
+
+
+itemSelection : Bool -> String -> Msg -> ScreenSize -> Element.Element Msg
+itemSelection selected src msg screenSize =
+    let
+        sizePx =
+            get8PercentHeight screenSize
+    in
+    Element.el
+        [ Element.Background.color Styles.darkerbeige
+        , Element.Border.rounded 50
+        , Element.Border.color Styles.black
+        , Element.Border.width
+            (if selected then
+                3
+
+             else
+                0
+            )
+        , Element.width <| Element.px sizePx
+        , Element.height <| Element.px sizePx
+        , Element.centerY
+        ]
+    <|
+        Element.Input.button
+            [ Element.width Element.fill
+            , Element.height Element.fill
+            , Element.padding (getPercentage sizePx 25)
+            ]
+            { onPress = Just msg
+            , label =
+                Element.el
+                    [ Element.width Element.fill
+                    , Element.height Element.fill
+                    , Element.Background.uncropped src
+                    ]
+                <|
+                    Element.none
+            }
+
+
+viewMain : Model -> UserData -> List (Element.Element Msg)
+viewMain model userData =
+    [ -- portion size
+      Element.column
+        [ Element.width Element.fill
+        , Element.centerX
+        , Element.height <| Element.fillPortion 1
+        ]
+        [ Element.el
+            [ Element.height <| Element.fillPortion 1
+            , Element.centerX
+            ]
+            (Element.text "Your portion size")
+        , Element.row
+            [ Element.spaceEvenly
+            , Element.width Element.fill
+            , Element.height <| Element.fillPortion 3
+            ]
+            [ portionSizer (isSelected model Small) Small (getPercentHeight model.screenSize 6)
+            , portionSizer (isSelected model Medium) Medium (getPercentHeight model.screenSize 7)
+            , portionSizer (isSelected model Large) Large (getPercentHeight model.screenSize 8)
+            , portionSizer (isSelected model Huge) Huge (getPercentHeight model.screenSize 9)
+            ]
+        ]
+    , -- options
+      Element.column
+        [ Element.height <| Element.fillPortion 1
+        , Element.width Element.fill
+        ]
+        [ Element.el
+            [ Element.width Element.fill
+            , Element.height <| Element.fillPortion 1
+            , Element.centerX
+            ]
+            (Element.text "Any specifics?")
+        , Element.wrappedRow
+            [ Element.spaceEvenly
+            , Element.width Element.fill
+            , Element.height <| Element.fillPortion 3
+            ]
+            [ itemSelection (model.currentFoodLog.alcohol == True) "/beer-solid.svg" ClickedAlcohol model.screenSize
+            , itemSelection (model.currentFoodLog.caffeine == True) "/coffee-solid.svg" ClickedCaffeine model.screenSize
+            , itemSelection (model.currentFoodLog.meat == True) "/drumstick-bite-solid.svg" ClickedMeat model.screenSize
+            , itemSelection (model.currentFoodLog.vegan == True) "/leaf-solid.svg" ClickedVegan model.screenSize
+            , itemSelection (model.currentFoodLog.keto == True) "/bacon-solid.svg" ClickedKeto model.screenSize
+            ]
+        ]
+    , -- validate
+      Element.column
+        [ Element.height <| Element.fillPortion 1
+        , Element.width Element.fill
+        ]
+        [ Element.Input.button
+            [ Element.centerX
+            , Element.centerY
+            ]
+            { onPress = Just <| SendCurrentFoodLog model.currentFoodLog userData.uid
+            , label = Element.el [ Element.centerX, Element.centerY ] <| Element.text "Send your log!"
+            }
+        ]
+    ]
+
+
+view2 : Model -> Html Msg
+view2 model =
     div []
         [ img [ src "/logo.svg" ] []
         , h1 [] [ text "Your Elm App is working!" ]
@@ -254,6 +546,31 @@ view model =
         ]
 
 
+getPercentage : Int -> Int -> Int
+getPercentage original percentage =
+    original * percentage // 100
+
+
+getPercentHeight : ScreenSize -> Int -> Int
+getPercentHeight size percentage =
+    getPercentage size.height percentage
+
+
+get8PercentHeight : ScreenSize -> Int
+get8PercentHeight size =
+    getPercentHeight size 8
+
+
+get1PercentHeight : ScreenSize -> Int
+get1PercentHeight size =
+    getPercentHeight size 1
+
+
+get10PercentHeight : ScreenSize -> Int
+get10PercentHeight size =
+    getPercentage size.height 10
+
+
 
 ---- PROGRAM ----
 
@@ -284,14 +601,15 @@ subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
         [ Ports.signInInfo (Json.Decode.decodeValue userDataDecoder >> LoggedInData)
+        , Browser.Events.onResize (\width height -> GotNewScreenSize { width = width, height = height })
         ]
 
 
-main : Program () Model Msg
+main : Program Flags Model Msg
 main =
     Browser.element
         { view = view
-        , init = \_ -> init
+        , init = init
         , update = update
         , subscriptions = subscriptions
         }
