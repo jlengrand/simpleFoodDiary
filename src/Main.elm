@@ -109,7 +109,7 @@ defaultFoodLog : FoodLog
 defaultFoodLog =
     -- TODO : Use latest values + current timing
     { ts = Time.millisToPosix 0
-    , portion = Medium
+    , portion = Small
     , keto = False
     , vegan = False
     , meat = False
@@ -261,7 +261,16 @@ setVegan value foodLog =
 
 view : Model -> Html Msg
 view model =
-    Element.layout
+    Element.layoutWith
+        { options =
+            [ Element.noHover
+            , Element.focusStyle
+                { borderColor = Maybe.Nothing
+                , backgroundColor = Maybe.Nothing
+                , shadow = Maybe.Nothing
+                }
+            ]
+        }
         [ Element.height Element.fill
         , Element.width Element.fill
         , Element.padding 20
@@ -316,7 +325,7 @@ view model =
                 [ Element.height Element.fill
                 , Element.width Element.fill
                 , Element.centerX
-                , Element.padding 10
+                , Element.padding 30
                 ]
                 (case model.userData of
                     Just userData ->
@@ -363,7 +372,6 @@ portionSizer selected description portion sizePx =
     Element.el
         [ Element.Background.color Styles.darkerbeige
         , Element.Border.rounded 50
-        , Element.padding 10
         , Element.Border.color Styles.black
         , Element.Border.width
             (if selected then
@@ -372,15 +380,25 @@ portionSizer selected description portion sizePx =
              else
                 0
             )
+        , Element.width <| Element.px sizePx
+        , Element.height <| Element.px sizePx
+        , Element.centerY
         ]
     <|
-        Element.image
-            [ Element.width <| Element.px sizePx
+        Element.Input.button
+            [ Element.width Element.fill
             , Element.height Element.fill
-            , Element.Events.onClick (ClickedPortion portion)
+            , Element.padding (getPercentage sizePx 25)
             ]
-            { src = "/pizza-slice-solid.svg"
-            , description = description
+            { onPress = Just (ClickedPortion portion)
+            , label =
+                Element.el
+                    [ Element.width Element.fill
+                    , Element.height Element.fill
+                    , Element.Background.uncropped "/pizza-slice-solid.svg"
+                    ]
+                <|
+                    Element.none
             }
 
 
@@ -433,10 +451,10 @@ viewMain model userData =
             , Element.width Element.fill
             , Element.height <| Element.fillPortion 3
             ]
-            [ portionSizer (isSelected model Small) "Small portion button" Small (getPercentHeight model.screenSize 5)
-            , portionSizer (isSelected model Medium) "Medium portion button" Medium (getPercentHeight model.screenSize 6)
-            , portionSizer (isSelected model Large) "Large portion button" Large (getPercentHeight model.screenSize 7)
-            , portionSizer (isSelected model Huge) "Huge portion button" Huge (getPercentHeight model.screenSize 8)
+            [ portionSizer (isSelected model Small) "Small portion button" Small (getPercentHeight model.screenSize 6)
+            , portionSizer (isSelected model Medium) "Medium portion button" Medium (getPercentHeight model.screenSize 7)
+            , portionSizer (isSelected model Large) "Large portion button" Large (getPercentHeight model.screenSize 8)
+            , portionSizer (isSelected model Huge) "Huge portion button" Huge (getPercentHeight model.screenSize 9)
             ]
         ]
     , -- options
