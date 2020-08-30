@@ -5,7 +5,6 @@ import Browser.Events
 import Element
 import Element.Background
 import Element.Border
-import Element.Events
 import Element.Font
 import Element.Input
 import Flip
@@ -86,7 +85,7 @@ type alias Model =
 
 init : Flags -> ( Model, Cmd Msg )
 init flags =
-    ( { userData = Just fakeUserData
+    ( { userData = Maybe.Nothing -- Just fakeUserData
       , currentFoodLog = defaultFoodLog
       , screenSize = { width = flags.startingWidth, height = flags.startingHeight }
       }
