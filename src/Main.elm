@@ -8,14 +8,13 @@ import Element.Border
 import Element.Font
 import Element.Input
 import Flip
-import Html exposing (Html, button, div, h1, img, text)
-import Html.Attributes exposing (height, id, src, width)
-import Html.Events exposing (onClick)
+import Html exposing (Html)
 import Json.Decode
 import Json.Decode.Pipeline
 import Json.Encode
 import Ports
 import Styles
+import Task
 import Time
 
 
@@ -107,7 +106,6 @@ fakeFoodLog =
 
 defaultFoodLog : FoodLog
 defaultFoodLog =
-    -- TODO : Use latest values + current timing
     { ts = Time.millisToPosix 0
     , portion = Small
     , keto = False
@@ -131,7 +129,8 @@ type Msg
     = SignIn
     | LoggedInData (Result Json.Decode.Error UserData)
     | LogOut
-    | SendCurrentFoodLog FoodLog String
+    | SendCurrentFoodLog Time.Posix
+    | ClickedSend
     | ClickedVegan
     | ClickedAlcohol
     | ClickedCaffeine
@@ -158,8 +157,23 @@ update msg model =
                 Err _ ->
                     ( model, Cmd.none )
 
-        SendCurrentFoodLog foodLog uid ->
-            ( { model | currentFoodLog = defaultFoodLog }, Ports.saveFoodLog <| foodLogEncoder foodLog uid )
+        SendCurrentFoodLog posix ->
+            case model.userData of
+                Maybe.Nothing ->
+                    ( model, Cmd.none )
+
+                Just userData ->
+                    let
+                        uid =
+                            userData.uid
+
+                        foodLog =
+                            model.currentFoodLog
+                    in
+                    ( { model | currentFoodLog = defaultFoodLog }, Ports.saveFoodLog <| foodLogEncoder { foodLog | ts = posix } uid )
+
+        ClickedSend ->
+            ( model, getNewTime )
 
         ClickedVegan ->
             let
@@ -511,48 +525,11 @@ viewMain model userData =
             [ Element.centerX
             , Element.centerY
             ]
-            { onPress = Just <| SendCurrentFoodLog model.currentFoodLog userData.uid
+            { onPress = Just <| ClickedSend
             , label = Element.el [ Element.centerX, Element.centerY ] <| Element.text "Send your log!"
             }
         ]
     ]
-
-
-view2 : Model -> Html Msg
-view2 model =
-    div []
-        [ img [ src "/logo.svg" ] []
-        , h1 [] [ text "Your Elm App is working!" ]
-        , case model.userData of
-            Maybe.Nothing ->
-                button [ onClick SignIn ] [ text "Login with Google" ]
-
-            Just userData ->
-                div []
-                    [ text userData.email
-                    , button [ onClick LogOut ] [ text "Logout" ]
-                    ]
-        , case model.userData of
-            Maybe.Nothing ->
-                div [] []
-
-            Just userData ->
-                div []
-                    [ div [ id "portion" ]
-                        [ button [ width 30, height 30, onClick <| ClickedPortion Small ] [ img [ width 30, height 30, src "/pizza-slice-solid.svg" ] [] ]
-                        , button [ width 30, height 30, onClick <| ClickedPortion Medium ] [ img [ width 30, height 30, src "/pizza-slice-solid.svg" ] [] ]
-                        , button [ width 30, height 30, onClick <| ClickedPortion Large ] [ img [ width 30, height 30, src "/pizza-slice-solid.svg" ] [] ]
-                        , button [ width 30, height 30, onClick <| ClickedPortion Huge ] [ img [ width 30, height 30, src "/pizza-slice-solid.svg" ] [] ]
-                        ]
-                    , div [ id "details" ]
-                        [ button [ width 50, height 50, onClick <| ClickedVegan ] [ img [ width 50, height 50, src "/leaf-solid.svg" ] [] ]
-                        , button [ width 50, height 50, onClick <| ClickedAlcohol ] [ img [ width 50, height 50, src "/beer-solid.svg" ] [] ]
-                        , button [ width 50, height 50, onClick <| ClickedCaffeine ] [ img [ width 50, height 50, src "/coffee-solid.svg" ] [] ]
-                        , button [ width 50, height 50, onClick <| ClickedMeat ] [ img [ width 50, height 50, src "/drumstick-bite-solid.svg" ] [] ]
-                        ]
-                    , button [ onClick <| SendCurrentFoodLog model.currentFoodLog userData.uid ] [ text "Send" ]
-                    ]
-        ]
 
 
 getPercentage : Int -> Int -> Int
@@ -582,6 +559,11 @@ get10PercentHeight size =
 
 
 ---- PROGRAM ----
+
+
+getNewTime : Cmd Msg
+getNewTime =
+    Task.perform SendCurrentFoodLog Time.now
 
 
 userDataDecoder : Json.Decode.Decoder UserData
