@@ -34,7 +34,10 @@ app.ports.signIn.subscribe(() => {
   console.log("LogIn called");
   firebase
     .auth()
-    .signInWithPopup(provider)
+    .setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+    .then(() => {
+      return firebase.auth().signInWithPopup(provider);
+    })
     .then(result => {
       result.user.getIdToken().then(idToken => {
         app.ports.signInInfo.send({
