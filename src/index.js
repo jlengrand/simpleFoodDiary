@@ -34,7 +34,7 @@ app.ports.signIn.subscribe(() => {
   console.log("LogIn called");
   firebase
     .auth()
-    .setPersistence(firebase.auth.Auth.Persistence.SESSION)
+    .setPersistence(firebase.auth.Auth.Persistence.LOCAL)
     .then(() => {
       return firebase.auth().signInWithRedirect(provider);
     })
