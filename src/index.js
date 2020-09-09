@@ -15,8 +15,6 @@ const firebaseConfig = {
   appId: process.env.ELM_APP_APP_ID
 };
 
-// console.log(firebaseConfig);
-
 firebase.initializeApp(firebaseConfig);
 
 const provider = new firebase.auth.GoogleAuthProvider();
@@ -30,22 +28,32 @@ const app = Elm.Main.init({
   }
 });
 
+
+firebase.auth().onAuthStateChanged(user => {
+  // console.log("LOGLOG");
+  // console.log(user);
+
+  if (user) {
+    user.getIdToken().then(idToken => {
+      app.ports.signInInfo.send({
+        token: idToken,
+        email: user.email,
+        uid: user.uid
+      });
+    });
+  } else {
+    console.log("NOPE")
+  }
+});
+
 app.ports.signIn.subscribe(() => {
   console.log("LogIn called");
   firebase
     .auth()
     .setPersistence(firebase.auth.Auth.Persistence.LOCAL)
     .then(() => {
-      return firebase.auth().signInWithPopup(provider);
-    })
-    .then(result => {
-      result.user.getIdToken().then(idToken => {
-        app.ports.signInInfo.send({
-          token: idToken,
-          email: result.user.email,
-          uid: result.user.uid
-        });
-      });
+      return firebase.auth().signInWithRedirect(provider);
+
     })
     .catch(error => {
       console.log("Impossible to sign in ", error);
@@ -55,6 +63,28 @@ app.ports.signIn.subscribe(() => {
       // });
     });
 });
+
+firebase.auth().getRedirectResult().then(result => {
+  // console.log("REDIRECT");
+  // console.log(result);
+  if(result && result.user){
+    result.user.getIdToken().then(idToken => {
+      app.ports.signInInfo.send({
+        token: idToken,
+        email: result.user.email,
+        uid: result.user.uid
+      });
+    });
+  }
+})
+  .catch(error => {
+    console.log("Impossible to sign in ", error);
+    // app.ports.signInError.send({
+    //   code: error.code,
+    //   message: error.message
+    // });
+  });
+
 
 app.ports.signOut.subscribe(() => {
   console.log("LogOut called");
