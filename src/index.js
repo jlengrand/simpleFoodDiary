@@ -34,19 +34,20 @@ app.ports.signIn.subscribe(() => {
   console.log("LogIn called");
   firebase
     .auth()
-    .setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+    .setPersistence(firebase.auth.Auth.Persistence.SESSION)
     .then(() => {
-      return firebase.auth().signInWithPopup(provider);
+      return firebase.auth().signInWithRedirect(provider);
     })
-    .then(result => {
-      result.user.getIdToken().then(idToken => {
-        app.ports.signInInfo.send({
-          token: idToken,
-          email: result.user.email,
-          uid: result.user.uid
-        });
-      });
-    })
+    // .then(result => {
+    //   console.log(result)
+    //   result.user.getIdToken().then(idToken => {
+    //     app.ports.signInInfo.send({
+    //       token: idToken,
+    //       email: result.user.email,
+    //       uid: result.user.uid
+    //     });
+    //   });
+    // })
     .catch(error => {
       console.log("Impossible to sign in ", error);
       // app.ports.signInError.send({
@@ -55,6 +56,27 @@ app.ports.signIn.subscribe(() => {
       // });
     });
 });
+
+firebase.auth().getRedirectResult().then(result => {
+  console.log("REDIRECT");
+  console.log(result)
+
+  result.user.getIdToken().then(idToken => {
+    app.ports.signInInfo.send({
+      token: idToken,
+      email: result.user.email,
+      uid: result.user.uid
+    });
+  });
+})
+  .catch(error => {
+    console.log("Impossible to sign in ", error);
+    // app.ports.signInError.send({
+    //   code: error.code,
+    //   message: error.message
+    // });
+  });
+
 
 app.ports.signOut.subscribe(() => {
   console.log("LogOut called");
